@@ -5,6 +5,7 @@
 //************************************************************************
 #include "chat_client.h"
 
+
 //Global Message object
 CIPMessage MyMessObj;
 
@@ -165,4 +166,3 @@ int main(int argc, char* argv[])
 	getch();
 	return 0;
 }
-
