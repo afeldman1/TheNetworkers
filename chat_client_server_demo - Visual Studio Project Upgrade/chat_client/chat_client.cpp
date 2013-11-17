@@ -23,16 +23,14 @@ void CIPMessage::Init(string sIpAddress, int iPort)
 	unsigned int addr;
 	struct sockaddr_in server;
 	
-
-	WSADATA wsaData;
-
-	int wsaret=WSAStartup(0x101,&wsaData);
-
-
-	if(wsaret!=0)
-	{
-		return;
-	}
+	#if defined(WIN32)
+	  WSADATA wsaData;
+	  int wsaret=WSAStartup(0x101,&wsaData);
+	  if(wsaret!=0)
+	  {
+		  return;
+	  }
+	#endif
 
 	conn=socket(AF_INET,SOCK_STREAM,0);
 	if(conn==INVALID_SOCKET)
@@ -149,7 +147,13 @@ int main(int argc, char* argv[])
 		return 0;	
 	}
 
-	AfxBeginThread(MessageRecThread,0);
+	#if defined(WIN32)
+	  AfxBeginThread(MessageRecThread,0);
+	#elif defined(__APPLE__)
+	  pthread_t *tID;
+	  pthread_create(tID, NULL, MessageRecThread, 0);
+	#endif
+
 	while(gets(buf))
 	{
 		if(strlen(buf) == 0)
@@ -163,6 +167,11 @@ int main(int argc, char* argv[])
 
 	cout<<"\nThis is Boby Signing off. BYE:";
 	getch();
+
+	#if defined(__APPLE__)
+	  // dispose all threads
+	  pthread_exit(NULL);
+	#endif
 	return 0;
 }
 

@@ -39,17 +39,14 @@ CChatServer::CChatServer()
     cout << "Starting up TCP Chat server\n";
 	m_bIsConnected = false;
 
-    WSADATA wsaData;
+	#if defined(WIN32)
+	  WSADATA wsaData;
+	  int wsaret=WSAStartup(0x101,&wsaData);
+	  if(wsaret!=0)
+		  return;
+	#endif
 
-    sockaddr_in local;
-
-    int wsaret=WSAStartup(0x101,&wsaData);
-
-    if(wsaret!=0)
-    {
-        return;
-    }
-
+	sockaddr_in local;
     local.sin_family=AF_INET; 
     local.sin_addr.s_addr=INADDR_ANY; 
     local.sin_port=htons((u_short)8084); 
@@ -82,7 +79,9 @@ CChatServer::~CChatServer()
 {
     closesocket(m_SListenClient);
 
-    WSACleanup();
+	#if defined(WIN32)
+	  WSACleanup();
+	#endif
 }
 
 void CChatServer::StartListenClient()
@@ -91,14 +90,17 @@ void CChatServer::StartListenClient()
     sockaddr_in from;
     int fromlen=sizeof(from);
 
-    m_SClient=accept(m_SListenClient,
-         (struct sockaddr*)&from,&fromlen);
+    m_SClient=accept(m_SListenClient,(struct sockaddr*)&from,&fromlen);
 
 	if(m_SClient != INVALID_SOCKET)
 		m_vClientList.push_back(m_SClient);
 
-	AfxBeginThread(ServerRecThread,(void *)m_SClient);
-
+	#if defined(WIN32)
+	  AfxBeginThread(ServerRecThread,(void *)m_SClient);
+	#elif defined(__APPLE__)
+	  pthread_t *tID;
+	  pthread_create(tID, NULL, ServerRecThread, (void *)m_SClient);
+	#endif
 }
 
 
@@ -134,7 +136,8 @@ int CChatServer::RecClient(SOCKET sRecSocket)
 		iStat = recv(sRecSocket,temp,4096,0);
 		if(iStat == -1)
 		{
-			m_vClientList.remove(sRecSocket);
+			if(m_vClientList.size())
+				m_vClientList.remove(sRecSocket);
 			return 1;
 		}
 		else
@@ -169,8 +172,13 @@ int main(int argc, char* argv[])
 		getch();
 		return 1;
 	}
-	AfxBeginThread(ServerListenThread,0);
 
+	#if defined(WIN32)
+	  AfxBeginThread(ServerListenThread,0);
+	#elif defined(__APPLE__)
+	  pthread_t *tID;
+	  pthread_create(tID, NULL, ServerListenThread, 0);
+	#endif
 
 	while(gets(buf))
 	{
@@ -185,7 +193,11 @@ int main(int argc, char* argv[])
 
 	cout<<"This is Boby signing off.";
 	getch();
-	
+
+	#if defined(__APPLE__)
+	  // dispose all threads
+	  pthread_exit(NULL);
+	#endif
     return nRetCode;
 }
 

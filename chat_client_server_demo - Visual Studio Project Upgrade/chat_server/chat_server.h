@@ -4,12 +4,23 @@
 // Implementation of CIPMessage class and main.
 //************************************************************************
 
+#ifdef WIN32
+  #include <Afxwin.h>
+  #include <winsock2.h>        // For socket(), connect(), send(), and recv()
+#else
+  #include <pthread.h>
+  #include <sys/types.h>       // For data types
+  #include <sys/socket.h>      // For socket(), connect(), send(), and recv()
+  #include <netdb.h>           // For gethostbyname()
+  #include <arpa/inet.h>       // For inet_addr()
+  #include <unistd.h>          // For close()
+  #include <netinet/in.h>      // For sockaddr_in
+  typedef void *LPVOID;
+#endif
 
-#include <Afxwin.h>
 #include <stdio.h>
-#include <winsock2.h>
 #include <conio.h> 
-#include<list>
+#include <list>
 #include <iostream>
 
 using namespace std;
