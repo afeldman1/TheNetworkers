@@ -77,22 +77,24 @@ int CIPMessage::SendMessagePort(string sMessage)
 
 int CIPMessage::RecMessagePort()
 {
+	char acRetData[4096];
+	int iStat = 0;
 
-		char acRetData[4096];
-		int iStat = 0;
+	iStat = recv(conn,acRetData,4096,0);
+	if(iStat == -1)
+		return 1;
+	cout<<"-->"<<acRetData<<"\n";
 
-		iStat = recv(conn,acRetData,4096,0);
-		if(iStat == -1)
-			return 1;
-		cout<<"-->"<<acRetData<<"\n";
-
-		return 0;
-
+	return 0;
 }
 
 
-
-UINT  MessageRecThread(LPVOID pParam)
+#if defined(WIN32)
+DWORD WINAPI
+#else
+UINT
+#endif
+MessageRecThread(LPVOID pParam)
 {	
 	while(1)
 	{
@@ -147,8 +149,11 @@ int main(int argc, char* argv[])
 		return 0;	
 	}
 
+	// TODO: Check if thread failed.
 	#if defined(WIN32)
-	  AfxBeginThread(MessageRecThread,0);
+	  //AfxBeginThread(MessageRecThread,0);
+	  HANDLE tID;
+	  tID = CreateThread(NULL, 0, MessageRecThread, 0, 0, NULL);  
 	#elif defined(__APPLE__)
 	  pthread_t *tID;
 	  pthread_create(tID, NULL, MessageRecThread, 0);

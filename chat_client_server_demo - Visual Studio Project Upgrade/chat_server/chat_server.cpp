@@ -10,8 +10,12 @@
 
 CChatServer CServerObj;
 
-
-UINT  ServerRecThread(LPVOID pParam)
+#if defined(WIN32)
+DWORD WINAPI
+#else
+UINT
+#endif
+ServerRecThread(LPVOID pParam)
 {	
 	SOCKET sRecSocket = (SOCKET)pParam;
 	while(1)
@@ -24,7 +28,12 @@ UINT  ServerRecThread(LPVOID pParam)
 
 
 
-UINT  ServerListenThread(LPVOID pParam)
+#if defined(WIN32)
+DWORD WINAPI
+#else
+UINT
+#endif
+ServerListenThread(LPVOID pParam)
 {	
 
 	while(1)
@@ -96,7 +105,9 @@ void CChatServer::StartListenClient()
 		m_vClientList.push_back(m_SClient);
 
 	#if defined(WIN32)
-	  AfxBeginThread(ServerRecThread,(void *)m_SClient);
+	  //AfxBeginThread(ServerRecThread,(void *)m_SClient);
+	  HANDLE tID;
+	  tID = CreateThread(NULL, 0, ServerRecThread, (void *)m_SClient, 0, NULL);  
 	#elif defined(__APPLE__)
 	  pthread_t *tID;
 	  pthread_create(tID, NULL, ServerRecThread, (void *)m_SClient);
@@ -173,8 +184,11 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
+	// TODO: Check if thread failed.
 	#if defined(WIN32)
-	  AfxBeginThread(ServerListenThread,0);
+	  //AfxBeginThread(ServerListenThread,0);
+	  HANDLE tID;
+	  tID = CreateThread(NULL, 0, ServerListenThread, 0, 0, NULL);  
 	#elif defined(__APPLE__)
 	  pthread_t *tID;
 	  pthread_create(tID, NULL, ServerListenThread, 0);

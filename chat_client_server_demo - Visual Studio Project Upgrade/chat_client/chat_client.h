@@ -5,7 +5,6 @@
 //************************************************************************
 
 #ifdef WIN32
-  #include <Afxwin.h>
   #include <winsock2.h>        // For socket(), connect(), send(), and recv()
 #else
   #include <pthread.h>
