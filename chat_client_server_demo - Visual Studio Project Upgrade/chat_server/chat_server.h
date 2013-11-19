@@ -38,5 +38,6 @@ private:
 	int m_iServerPort;
 	list<SOCKET> m_vClientList; // All socket connected to client
 	SOCKET m_SClient;
+	SOCKET unknownListenClient;
 	SOCKET m_SListenClient; // socket listening for client calls
 };

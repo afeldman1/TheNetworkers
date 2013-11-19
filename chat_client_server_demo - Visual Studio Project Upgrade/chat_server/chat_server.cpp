@@ -1,9 +1,6 @@
 //************************************************************************
-// Boby Thomas Pazheparampil
-// May 2006
 // Implementation of CIPMessage class and main.
 //************************************************************************
-
 
 #include "chat_server.h"
 
@@ -26,8 +23,6 @@ ServerRecThread(LPVOID pParam)
 	return 0;
 }
 
-
-
 #if defined(WIN32)
 DWORD WINAPI
 #else
@@ -38,6 +33,19 @@ ServerListenThread(LPVOID pParam)
 
 	while(1)
 		CServerObj.StartListenClient();
+	return 0;
+}
+
+
+
+int lookout(LPVOID pParam)
+{
+	SOCKET sRecSocket = (SOCKET)pParam;
+	while(1)
+	{
+		if(CServerObj.RecClient(sRecSocket))
+			break;
+	}
 	return 0;
 }
 
@@ -56,26 +64,33 @@ CChatServer::CChatServer()
 	#endif
 
 	sockaddr_in local;
-    local.sin_family=AF_INET; 
-    local.sin_addr.s_addr=INADDR_ANY; 
-    local.sin_port=htons((u_short)8084); 
+    local.sin_family=AF_INET;
+    local.sin_addr.s_addr=INADDR_ANY;
+    local.sin_port=htons((u_short)8084);
 
-    m_SListenClient=socket(AF_INET,SOCK_STREAM,0);
+	sockaddr_in unknown;
+    unknown.sin_family=AF_INET;
+    unknown.sin_addr.s_addr=INADDR_ANY;
+    unknown.sin_port=htons((u_short)8085);
+
+    m_SListenClient = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+	unknownListenClient = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
 
-    if(m_SListenClient==INVALID_SOCKET)
+    if(m_SListenClient == INVALID_SOCKET || unknownListenClient == INVALID_SOCKET)
     {
         return;
     }
 
 
-    if(bind(m_SListenClient,(sockaddr*)&local,sizeof(local))!=0)
+    if(bind(m_SListenClient, (sockaddr*)&local, sizeof(local)) != 0 || bind(unknownListenClient, (sockaddr*)&unknown, sizeof(unknown)) != 0)
     {
         return;
     }
 
 
-    if(listen(m_SListenClient,10)!=0)
+    if(listen(m_SListenClient,10) != 0)
     {
         return;
     }
@@ -142,7 +157,7 @@ int CChatServer::RecClient(SOCKET sRecSocket)
 {
     char temp[4096];
 	int iStat;
-		
+
     //cout <<inet_ntoa(from.sin_addr) <<":"<<temp<<"\r\n";
 		iStat = recv(sRecSocket,temp,4096,0);
 		if(iStat == -1)
@@ -162,24 +177,21 @@ int CChatServer::RecClient(SOCKET sRecSocket)
 }
 
 
-
-
 int main(int argc, char* argv[])
 {
     int nRetCode = 0;
 	char buf[4096];
 	
-    cout << "This is written by Boby Thomas.\r\n";
 	cout << "This aplication act as a chat server.\n";
 	cout << "Messages from any pc will be broadcasted to all connected pcs.\n";
-	cout << "Connect to the server pc port 8084(Digital BOBY).\n";
+	cout << "Connect to the server pc port 8084.\n";
     cout << "Press ONLY ENTER to quit.\n";
 	cout << "=================================================\n";
 
 	if(!CServerObj.IsConnected())
 	{
 		cout<<"\nFailed to initialise server socket";
-		cout<<"\nThis is boby signing off : Bye";
+		cout<<"\nSigning off : Bye";
 		getch();
 		return 1;
 	}
@@ -187,8 +199,9 @@ int main(int argc, char* argv[])
 	// TODO: Check if thread failed.
 	#if defined(WIN32)
 	  //AfxBeginThread(ServerListenThread,0);
-	  HANDLE tID;
-	  tID = CreateThread(NULL, 0, ServerListenThread, 0, 0, NULL);  
+	  HANDLE tID, newID;
+	  tID = CreateThread(NULL, 0, ServerListenThread, 0, 0, NULL);
+	  newID = CreateThread(NULL, 0, ServerListenThread, 0, 0, NULL);
 	#elif defined(__APPLE__)
 	  pthread_t *tID;
 	  pthread_create(tID, NULL, ServerListenThread, 0);
@@ -205,7 +218,7 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	cout<<"This is Boby signing off.";
+	cout<<"Signing off.";
 	getch();
 
 	#if defined(__APPLE__)
