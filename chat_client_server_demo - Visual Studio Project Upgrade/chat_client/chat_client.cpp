@@ -89,12 +89,7 @@ int CIPMessage::RecMessagePort()
 }
 
 
-#if defined(WIN32)
-DWORD WINAPI
-#else
-UINT
-#endif
-MessageRecThread(LPVOID pParam)
+THREAD MessageRecThread(LPVOID pParam)
 {	
 	while(1)
 	{
@@ -108,6 +103,7 @@ MessageRecThread(LPVOID pParam)
 
 int main(int argc, char* argv[])
 {
+	int nRetCode = 0;
 	char buf[4096];
 	cout<<"This is a client TCP/IP application\nConnecting to port 8084\n";
 	cout<<"\nPress ONLY ENTER to quit";
@@ -135,7 +131,7 @@ int main(int argc, char* argv[])
 		cout<<"\nUnable to find server IPaddress in server.ini";
 		cout<<"\nPlease set server IPaddress";
 		cout<<"\nThis is Boby Signing off. BYE:";
-		getch();
+		cin.ignore(numeric_limits<streamsize>::max(), '\n');
 		return 0;
 	}
 
@@ -145,7 +141,7 @@ int main(int argc, char* argv[])
 		cout<<"\nUnable to connect to the IPaddress specified in server.ini";
 		cout<<"\nPlease check server IPaddress";
 		cout<<"\nThis is Boby Signing off. BYE:";
-		getch();
+		cin.ignore(numeric_limits<streamsize>::max(), '\n');
 		return 0;	
 	}
 
@@ -171,12 +167,12 @@ int main(int argc, char* argv[])
 	}
 
 	cout<<"\nThis is Boby Signing off. BYE:";
-	getch();
+	cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
 	#if defined(__APPLE__)
 	  // dispose all threads
 	  pthread_exit(NULL);
 	#endif
-	return 0;
+	return nRetCode;
 }
 

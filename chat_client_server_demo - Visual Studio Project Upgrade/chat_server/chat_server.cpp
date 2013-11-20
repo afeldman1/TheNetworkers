@@ -7,14 +7,9 @@
 
 CChatServer CServerObj;
 
-#if defined(WIN32)
-DWORD WINAPI
-#else
-UINT
-#endif
-ServerRecThread(LPVOID pParam)
+THREAD ServerRecThread(LPVOID pParam)
 {	
-	SOCKET sRecSocket = (SOCKET)pParam;
+	SOCKET sRecSocket = reinterpret_cast<SOCKET>(pParam);
 	while(1)
 	{
 		if(CServerObj.RecClient(sRecSocket))
@@ -23,14 +18,8 @@ ServerRecThread(LPVOID pParam)
 	return 0;
 }
 
-#if defined(WIN32)
-DWORD WINAPI
-#else
-UINT
-#endif
-ServerListenThread(LPVOID pParam)
+THREAD ServerListenThread(LPVOID pParam)
 {	
-
 	while(1)
 		CServerObj.StartListenClient();
 	return 0;
@@ -38,13 +27,13 @@ ServerListenThread(LPVOID pParam)
 
 
 
-int lookout(LPVOID pParam)
+THREAD LookoutThread(LPVOID pParam)
 {
-	SOCKET sRecSocket = (SOCKET)pParam;
+	SOCKET sRecSocket = reinterpret_cast<SOCKET>(pParam);
 	while(1)
-	{
-		if(CServerObj.RecClient(sRecSocket))
-			break;
+	{//TO BE WRITTEN
+		//if(CServerObj.RecClient(sRecSocket))
+			//break;
 	}
 	return 0;
 }
@@ -89,6 +78,13 @@ CChatServer::CChatServer()
         return;
     }
 
+	#if defined(WIN32)
+	  HANDLE tID;
+	  tID = CreateThread(NULL, 0, LookoutThread, reinterpret_cast<void*>(unknownListenClient), 0, NULL);  
+	#elif defined(__APPLE__)
+	  pthread_t *tID;
+	  pthread_create(tID, NULL, LookoutThread, reinterpret_cast<void*>(unknownListenClient));
+	#endif
 
     if(listen(m_SListenClient,10) != 0)
     {
@@ -112,7 +108,7 @@ void CChatServer::StartListenClient()
 {
 
     sockaddr_in from;
-    int fromlen=sizeof(from);
+    socklen_t fromlen=sizeof(from);
 
     m_SClient=accept(m_SListenClient,(struct sockaddr*)&from,&fromlen);
 
@@ -120,12 +116,11 @@ void CChatServer::StartListenClient()
 		m_vClientList.push_back(m_SClient);
 
 	#if defined(WIN32)
-	  //AfxBeginThread(ServerRecThread,(void *)m_SClient);
 	  HANDLE tID;
-	  tID = CreateThread(NULL, 0, ServerRecThread, (void *)m_SClient, 0, NULL);  
+	  tID = CreateThread(NULL, 0, ServerRecThread, reinterpret_cast<void*>(m_SClient), 0, NULL);  
 	#elif defined(__APPLE__)
 	  pthread_t *tID;
-	  pthread_create(tID, NULL, ServerRecThread, (void *)m_SClient);
+	  pthread_create(tID, NULL, ServerRecThread, reinterpret_cast<void*>(m_SClient));
 	#endif
 }
 
@@ -192,16 +187,14 @@ int main(int argc, char* argv[])
 	{
 		cout<<"\nFailed to initialise server socket";
 		cout<<"\nSigning off : Bye";
-		getch();
+		cin.ignore(numeric_limits<streamsize>::max(), '\n');
 		return 1;
 	}
 
 	// TODO: Check if thread failed.
 	#if defined(WIN32)
-	  //AfxBeginThread(ServerListenThread,0);
-	  HANDLE tID, newID;
+	  HANDLE tID;
 	  tID = CreateThread(NULL, 0, ServerListenThread, 0, 0, NULL);
-	  newID = CreateThread(NULL, 0, ServerListenThread, 0, 0, NULL);
 	#elif defined(__APPLE__)
 	  pthread_t *tID;
 	  pthread_create(tID, NULL, ServerListenThread, 0);
@@ -219,7 +212,7 @@ int main(int argc, char* argv[])
 	}
 
 	cout<<"Signing off.";
-	getch();
+	cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
 	#if defined(__APPLE__)
 	  // dispose all threads

@@ -4,8 +4,18 @@
 // Implementation of CIPMessage class and main.
 //************************************************************************
 
+#include <stdio.h>
+#include <stdint.h>
+#include <list>
+#include <iostream>
+#include <limits>       // std::numeric_limits
+using namespace std;
+
 #ifdef WIN32
-  #include <winsock2.h>        // For socket(), connect(), send(), and recv()
+  #define NOMINMAX
+  #include <winsock2.h>			// For socket(), connect(), send(), and recv()
+  typedef int32_t socklen_t;	// Or use int (This function, unlike in SOCKET programming [uint], is int)
+  #define THREAD DWORD WINAPI	// Requirements for running a function in a separate thread in WIN32.
 #else
   #include <pthread.h>
   #include <sys/types.h>       // For data types
@@ -14,15 +24,13 @@
   #include <arpa/inet.h>       // For inet_addr()
   #include <unistd.h>          // For close()
   #include <netinet/in.h>      // For sockaddr_in
-  typedef void *LPVOID;
+  typedef void* LPVOID;
+  typedef int SOCKET;
+  #define INVALID_SOCKET  (SOCKET)(~0)
+  typedef unsigned int UINT;
+  #define closesocket(sock) close(sock)
+  #define THREAD UINT
 #endif
-
-#include <stdio.h>
-#include <conio.h> 
-#include <list>
-#include <iostream>
-
-using namespace std;
 
 class CChatServer
 {
