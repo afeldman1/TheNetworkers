@@ -34,6 +34,8 @@ THREAD LookoutThread(LPVOID pParam)
 	{//TO BE WRITTEN
 		//if(CServerObj.RecClient(sRecSocket))
 			//break;
+		//iStat = recv(sRecSocket,temp,4096,0);
+
 	}
 	return 0;
 }
@@ -73,7 +75,7 @@ CChatServer::CChatServer()
     }
 
 
-    if(bind(m_SListenClient, (sockaddr*)&local, sizeof(local)) != 0 || bind(unknownListenClient, (sockaddr*)&unknown, sizeof(unknown)) != 0)
+    if(bind(m_SListenClient, (sockaddr*)&local, sizeof(local)) == SOCKET_ERROR || bind(unknownListenClient, (sockaddr*)&unknown, sizeof(unknown)) == SOCKET_ERROR)
     {
         return;
     }
@@ -196,8 +198,8 @@ int main(int argc, char* argv[])
 	  HANDLE tID;
 	  tID = CreateThread(NULL, 0, ServerListenThread, 0, 0, NULL);
 	#elif defined(__APPLE__)
-	  pthread_t *tID;
-	  pthread_create(tID, NULL, ServerListenThread, 0);
+	  pthread_t tID;
+	  pthread_create(&tID, NULL, ServerListenThread, 0);
 	#endif
 
 	while(gets(buf))
