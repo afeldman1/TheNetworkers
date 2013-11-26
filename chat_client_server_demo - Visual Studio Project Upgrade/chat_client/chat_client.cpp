@@ -150,9 +150,9 @@ int main(int argc, char* argv[])
 	  //AfxBeginThread(MessageRecThread,0);
 	  HANDLE tID;
 	  tID = CreateThread(NULL, 0, MessageRecThread, 0, 0, NULL);  
-	#elif defined(__APPLE__)
-	  pthread_t *tID;
-	  pthread_create(tID, NULL, MessageRecThread, 0);
+	#else
+	  pthread_t tID;
+	  pthread_create(&tID, NULL, MessageRecThread, 0);
 	#endif
 
 	while(gets(buf))
@@ -169,7 +169,7 @@ int main(int argc, char* argv[])
 	cout<<"\nThis is Boby Signing off. BYE:";
 	cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
-	#if defined(__APPLE__)
+	#ifndef WIN32
 	  // dispose all threads
 	  pthread_exit(NULL);
 	#endif

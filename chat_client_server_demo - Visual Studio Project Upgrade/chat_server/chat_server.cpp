@@ -83,9 +83,9 @@ CChatServer::CChatServer()
 	#if defined(WIN32)
 	  HANDLE tID;
 	  tID = CreateThread(NULL, 0, LookoutThread, reinterpret_cast<void*>(unknownListenClient), 0, NULL);  
-	#elif defined(__APPLE__)
-	  pthread_t *tID;
-	  pthread_create(tID, NULL, LookoutThread, reinterpret_cast<void*>(unknownListenClient));
+	#else
+	  pthread_t tID;
+	  pthread_create(&tID, NULL, LookoutThread, reinterpret_cast<void*>(unknownListenClient));
 	#endif
 
     if(listen(m_SListenClient,10) != 0)
@@ -121,8 +121,8 @@ void CChatServer::StartListenClient()
 	  HANDLE tID;
 	  tID = CreateThread(NULL, 0, ServerRecThread, reinterpret_cast<void*>(m_SClient), 0, NULL);  
 	#elif defined(__APPLE__)
-	  pthread_t *tID;
-	  pthread_create(tID, NULL, ServerRecThread, reinterpret_cast<void*>(m_SClient));
+	  pthread_t tID;
+	  pthread_create(&tID, NULL, ServerRecThread, reinterpret_cast<void*>(m_SClient));
 	#endif
 }
 
@@ -197,7 +197,7 @@ int main(int argc, char* argv[])
 	#if defined(WIN32)
 	  HANDLE tID;
 	  tID = CreateThread(NULL, 0, ServerListenThread, 0, 0, NULL);
-	#elif defined(__APPLE__)
+	#else
 	  pthread_t tID;
 	  pthread_create(&tID, NULL, ServerListenThread, 0);
 	#endif
@@ -216,7 +216,7 @@ int main(int argc, char* argv[])
 	cout<<"Signing off.";
 	cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
-	#if defined(__APPLE__)
+	#ifndef WIN32
 	  // dispose all threads
 	  pthread_exit(NULL);
 	#endif
