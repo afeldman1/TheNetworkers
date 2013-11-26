@@ -25,17 +25,24 @@ THREAD ServerListenThread(LPVOID pParam)
 	return 0;
 }
 
-
-
 THREAD LookoutThread(LPVOID pParam)
 {
 	SOCKET sRecSocket = reinterpret_cast<SOCKET>(pParam);
-	while(1)
-	{//TO BE WRITTEN
-		//if(CServerObj.RecClient(sRecSocket))
-			//break;
-		//iStat = recv(sRecSocket,temp,4096,0);
+	char tempBuf[4096];
+	int newMember;
+	while(select(sd+1, &readfds, NULL, NULL, &timeout) > 0)
+    {
+        /* receive the response */
+        recvfrom( ... );
 
+        /* process the response (or queue for another thread / later processing) */
+
+        /* reset receive timeout */
+        timeout.tv_sec = 5; 
+    }
+	while(1)
+	{
+		newMember = recv(sRecSocket, tempBuf, 4096, 0);
 	}
 	return 0;
 }
