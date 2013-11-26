@@ -30,7 +30,7 @@ using namespace std;
   #define INVALID_SOCKET  (SOCKET)(~0)
   typedef unsigned int UINT;
   #define closesocket(sock) close(sock)
-  #define THREAD UINT
+  #define THREAD void*
 #endif
 
 class CChatServer
