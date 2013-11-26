@@ -9,6 +9,7 @@
 #include <list>
 #include <iostream>
 #include <limits>       // std::numeric_limits
+#include <cstdint>
 using namespace std;
 
 #ifdef WIN32
@@ -25,7 +26,7 @@ using namespace std;
   #include <unistd.h>          // For close()
   #include <netinet/in.h>      // For sockaddr_in
   typedef void* LPVOID;
-  typedef int SOCKET;
+  typedef intptr_t SOCKET;
   #define INVALID_SOCKET  (SOCKET)(~0)
   typedef unsigned int UINT;
   #define closesocket(sock) close(sock)
