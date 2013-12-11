@@ -81,9 +81,11 @@ int CIPMessage::RecMessagePort()
 	int iStat = 0;
 
 	iStat = recv(conn,acRetData,4096,0);
-	if(iStat == -1)
+	if(iStat == -1){
+		cout<<"Server has ended!"<<endl;
 		return 1;
-	cout<<"-->"<<acRetData<<"\n";
+	}
+	cout<<acRetData<<"\n";
 
 	return 0;
 }
@@ -155,18 +157,20 @@ int main(int argc, char* argv[])
 	  pthread_create(&tID, NULL, MessageRecThread, 0);
 	#endif
 
+	cout<<"Enter name before entering the chat:"<<endl;
 	while(gets(buf))
 	{
 		if(strlen(buf) == 0)
 			break;
 		if(MyMessObj.SendMessagePort(buf))
 		{
-			cout<<"Problem in connecting to server. Check whether server is running\n";
+			cout<<"Problem in connecting to server. Check whether server is running!\n";
 			break;
 		}
 	}
-
-	cout<<"\nThis is Boby Signing off. BYE:";
+	#ifdef WIN32
+		WSACleanup();
+	#endif
 	cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
 	#ifndef WIN32

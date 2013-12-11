@@ -10,6 +10,7 @@
 #include <iostream>
 #include <limits>       // std::numeric_limits
 #include <cstdint>
+#include <string>
 using namespace std;
 
 #ifdef WIN32
@@ -33,6 +34,20 @@ using namespace std;
   #define THREAD void*
 #endif
 
+struct Client{
+	SOCKET sock;
+	string name;
+
+	Client(){
+		sock = NULL;
+		name = "";
+	}
+
+	bool operator==(const Client& a){
+		return (this->name==a.name && this->sock==a.sock);
+	}
+};
+
 class CChatServer
 {
 public:
@@ -40,12 +55,15 @@ public:
 	~CChatServer();
 	bool IsConnected(){return m_bIsConnected;} // returns connection status
 	void StartListenClient(); // Listen to client
-	int SendMessagePort(string sMessage); // Send message to sll clients.
-	int RecClient(SOCKET sRecSocket); // receive message for a particulat socket
+	int SendMessageTo(Client sClient, string MSG);
+	int SendMessageAll(string MSG, Client aClient=Client());
+	int RecClient(Client& sRecClient); // receive message for a particulat socket
+	list<Client>::iterator FindClient(Client sRecClient);
+	int Shutdown();
 private:
-	bool m_bIsConnected; // true - connected false - not connected
+	bool m_bIsConnected,closing; // true - connected false - not connected
 	int m_iServerPort;
-	list<SOCKET> m_vClientList; // All socket connected to client
+	list<Client> ClientList; // All clients
 	SOCKET m_SClient;
 	SOCKET unknownListenClient;
 	SOCKET m_SListenClient; // socket listening for client calls

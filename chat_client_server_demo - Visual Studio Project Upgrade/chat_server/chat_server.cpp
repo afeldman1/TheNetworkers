@@ -9,10 +9,13 @@ CChatServer CServerObj;
 
 THREAD ServerRecThread(LPVOID pParam)
 {	
-	SOCKET sRecSocket = reinterpret_cast<SOCKET>(pParam);
+	//SOCKET sRecSocket = reinterpret_cast<SOCKET>(pParam);
+	Client sRecClient = *((Client*)(pParam));
+	delete (Client*)(pParam);
 	while(1)
 	{
-		if(CServerObj.RecClient(sRecSocket))
+		//if(CServerObj.RecClient(sRecSocket))
+		if(CServerObj.RecClient(sRecClient))
 			break;
 	}
 	return 0;
@@ -27,23 +30,23 @@ THREAD ServerListenThread(LPVOID pParam)
 
 THREAD LookoutThread(LPVOID pParam)
 {
-	SOCKET sRecSocket = reinterpret_cast<SOCKET>(pParam);
+	/*SOCKET sRecSocket = reinterpret_cast<SOCKET>(pParam);
 	char tempBuf[4096];
 	int newMember;
 	while(select(sd+1, &readfds, NULL, NULL, &timeout) > 0)
     {
-        /* receive the response */
+        // receive the response
         recvfrom( ... );
 
-        /* process the response (or queue for another thread / later processing) */
+        // process the response (or queue for another thread / later processing)
 
-        /* reset receive timeout */
+        // reset receive timeout
         timeout.tv_sec = 5; 
     }
 	while(1)
 	{
 		newMember = recv(sRecSocket, tempBuf, 4096, 0);
-	}
+	}*/
 	return 0;
 }
 
@@ -101,6 +104,7 @@ CChatServer::CChatServer()
     }
 
 	m_bIsConnected = true;
+	closing = false;
     return;
 }
 
@@ -116,68 +120,138 @@ CChatServer::~CChatServer()
 void CChatServer::StartListenClient()
 {
 
-    sockaddr_in from;
-    socklen_t fromlen=sizeof(from);
+	sockaddr_in from;
+	socklen_t fromlen=sizeof(from);
 
-    m_SClient=accept(m_SListenClient,(struct sockaddr*)&from,&fromlen);
+	m_SClient=accept(m_SListenClient,(struct sockaddr*)&from,&fromlen);
 
-	if(m_SClient != INVALID_SOCKET)
-		m_vClientList.push_back(m_SClient);
+	if(m_SClient != INVALID_SOCKET){
+		Client *newClient = new Client();
+		newClient->sock = m_SClient;
+		ClientList.push_back(*newClient);
 
-	#if defined(WIN32)
-	  HANDLE tID;
-	  tID = CreateThread(NULL, 0, ServerRecThread, reinterpret_cast<void*>(m_SClient), 0, NULL);  
-	#elif defined(__APPLE__)
-	  pthread_t tID;
-	  pthread_create(&tID, NULL, ServerRecThread, reinterpret_cast<void*>(m_SClient));
-	#endif
+		#if defined(WIN32)
+			HANDLE tID;
+			//tID = CreateThread(NULL, 0, ServerRecThread, reinterpret_cast<void*>(m_SClient), 0, NULL);
+			tID = CreateThread(NULL, 0, ServerRecThread, newClient, 0, NULL);
+		#elif defined(__APPLE__)
+			pthread_t tID;
+			//pthread_create(&tID, NULL, ServerRecThread, reinterpret_cast<void*>(m_SClient));
+			pthread_create(&tID, NULL, ServerRecThread, newClient);
+		#endif
+	}
 }
 
-
-
-int CChatServer::SendMessagePort(string sMessage)
+int CChatServer::SendMessageTo(Client sClient, string MSG)
+{
+		int iStat = send(sClient.sock, MSG.c_str(), MSG.size()+1, 0);
+		if(iStat == -1){
+			ClientList.remove(sClient);
+			cout<<sClient.name + " has left."<<endl;
+			SendMessageAll(sClient.name + " has left.");
+			return 1;
+		}
+		return 0;
+}
+int CChatServer::SendMessageAll(string MSG, Client aClient)
 {
 		int iStat = 0;
-		list<SOCKET>::iterator itl;
-
-		if(m_vClientList.size() == 0)
+		list<Client>::iterator itl;
+		if(ClientList.size() == 0)
 			return 0;
 
-		for(itl = m_vClientList.begin();itl != m_vClientList.end();itl++)
+		for(itl = ClientList.begin();itl != ClientList.end();itl++)
 		{
-			iStat = send(*itl,sMessage.c_str(),sMessage.size()+1,0);			
-			if(iStat == -1)
-				m_vClientList.remove(*itl);
+			if(itl->name != aClient.name && !itl->name.empty()){
+				iStat = send(itl->sock,MSG.c_str(),MSG.size()+1,0);
+				if(iStat == -1){
+					cout<<itl->name + " has left."<<endl;
+					SendMessageAll(itl->name + " has left.", *itl);
+					ClientList.remove(*itl);
+					return 1;
+				}
+			}
 		}
-
-		if(iStat == -1)
-			return 1;
-
 		return 0;
-
 }
 
-int CChatServer::RecClient(SOCKET sRecSocket)
+list<Client>::iterator CChatServer::FindClient(Client sRecClient){
+	list<Client>::iterator itl;
+	if(ClientList.size() == 0)
+		return itl;
+
+	for(itl = ClientList.begin();itl != ClientList.end();itl++)
+	{
+		if(itl->sock == sRecClient.sock){
+			return itl;
+		}
+	}
+}
+
+int CChatServer::RecClient(Client& sRecClient)
 {
     char temp[4096];
 	int iStat;
 
     //cout <<inet_ntoa(from.sin_addr) <<":"<<temp<<"\r\n";
-		iStat = recv(sRecSocket,temp,4096,0);
-		if(iStat == -1)
-		{
-			if(m_vClientList.size())
-				m_vClientList.remove(sRecSocket);
-			return 1;
+	iStat = recv(sRecClient.sock,temp,4096,0);
+	if(!closing){
+	if(iStat == -1)
+	{
+		if(ClientList.size())
+			ClientList.remove(sRecClient);
+		cout<<sRecClient.name + " has left."<<endl;
+		SendMessageAll(sRecClient.name + " has left.");
+		return 1;
+	}
+	else
+	{
+		if(sRecClient.name.empty()){
+			string reqName = temp;
+			list<Client>::iterator itl;
+			if(ClientList.size() == 0)
+				return 0; // Massive problems if this happens. Restart server.
+			for(itl = ClientList.begin();itl != ClientList.end();itl++)
+			{
+				if(itl->name == reqName){
+					// Send Not Valid Name
+					SendMessageTo(sRecClient, "Invalid Name!");
+					return 0;
+				}
+			}
+			// Send Was Valid Name
+			SendMessageTo(sRecClient, "Valid Name!");
+			FindClient(sRecClient)->name = reqName;
+			sRecClient.name = reqName;
+			cout<<reqName + " has entered chat."<<endl;
+			SendMessageAll(reqName + " has entered chat.", sRecClient);
+		}else{
+			string msg = sRecClient.name + ": " + temp;
+			cout<<msg<<endl;
+			SendMessageAll(msg, sRecClient);
 		}
-		else
-		{
-			cout <<":"<<temp<<"\n";
-			SendMessagePort(temp);
-			return 0;
-		}
+		return 0;
+	}
+	}
 	return 0;
+}
 
+int CChatServer::Shutdown(){
+	closing = true;
+	int iStat = 0;
+	list<Client>::iterator itl;
+	if(ClientList.size() == 0)
+		return 0;
+
+	for(itl = ClientList.begin();itl != ClientList.end();itl++)
+	{
+		closesocket(itl->sock);
+		shutdown(itl->sock, SD_BOTH);
+		//ClientList.remove(*itl);
+	}
+	#ifdef WIN32
+		WSACleanup();
+	#endif
 }
 
 
@@ -209,18 +283,20 @@ int main(int argc, char* argv[])
 	  pthread_create(&tID, NULL, ServerListenThread, 0);
 	#endif
 
+	string ServerName = "Server";
 	while(gets(buf))
 	{
 		if(strlen(buf) == 0)
 			break;
-		if(CServerObj.SendMessagePort(buf))
+		if(CServerObj.SendMessageAll(ServerName + ": " + buf))
 		{
 			cout<<"Problem in connecting to server. Check whether server is running\n";
 			break;
 		}
 	}
 
-	cout<<"Signing off.";
+	cout<<"Signing off."<<endl;
+	CServerObj.Shutdown();
 	cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
 	#ifndef WIN32
