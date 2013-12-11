@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <list>
 #include <iostream>
+#include <string>
 #include <limits>       // std::numeric_limits
 #include <cstdint>
 using namespace std;
@@ -43,6 +44,7 @@ public:
 	int SendMessagePort(string sMessage);
 	int RecMessagePort();
 	bool IsConnected(){return m_bIsConnected;}
+	bool closing;
 private:
 	bool m_bIsConnected; // true - connected false - not connected
 	string m_sServerIPAddress;

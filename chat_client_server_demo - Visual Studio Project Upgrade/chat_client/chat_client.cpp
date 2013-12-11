@@ -22,15 +22,6 @@ void CIPMessage::Init(string sIpAddress, int iPort)
 	struct hostent *hp;
 	unsigned int addr;
 	struct sockaddr_in server;
-	
-	#if defined(WIN32)
-	  WSADATA wsaData;
-	  int wsaret=WSAStartup(0x101,&wsaData);
-	  if(wsaret!=0)
-	  {
-		  return;
-	  }
-	#endif
 
 	conn=socket(AF_INET,SOCK_STREAM,0);
 	if(conn==INVALID_SOCKET)
@@ -54,6 +45,7 @@ void CIPMessage::Init(string sIpAddress, int iPort)
 		return;	
 	}
 	m_bIsConnected = true;
+	closing = false;
 	return;
 }
 
@@ -82,7 +74,9 @@ int CIPMessage::RecMessagePort()
 
 	iStat = recv(conn,acRetData,4096,0);
 	if(iStat == -1){
-		cout<<"Server has ended!"<<endl;
+		if(!closing){
+			cout<<"Server has ended!"<<endl;
+		}
 		return 1;
 	}
 	cout<<acRetData<<"\n";
@@ -109,40 +103,89 @@ int main(int argc, char* argv[])
 	char buf[4096];
 	cout<<"This is a client TCP/IP application\nConnecting to port 8084\n";
 	cout<<"\nPress ONLY ENTER to quit";
-	cout<<"\nWritten by Boby Thomas";
-	cout<<"\n===============================================\n";
+	cout<<"\n===============================================\n"<<endl;
 
-	FILE *fp = fopen("server.ini","r");
-	if(fp == NULL)
-	{
-		cout<<"\nUnable to open server.ini. Please specify server IPsddress in server.ini";
-		return 1; // main failed
-	}
 	string sServerAddress;
-	while((fgets(buf,4096,fp)) != NULL)
-	{
-		if(buf[0] == '#')
-			continue;
-		sServerAddress = buf;
+	FILE *fp = fopen("server.ini","r");
+	if(fp == NULL){
+		cout<<"Unable to open server.ini!";
+	}else{
+		while((fgets(buf,4096,fp)) != NULL)
+		{
+			if(buf[0] == '#')
+				continue;
+			sServerAddress = buf;
 
+		}
+		fclose(fp);
+		if(sServerAddress.size() == 0){
+			cout<<"Unable to find server IP address in server.ini"<<endl;
+		}else{
+			cout<<"Using server IP address from server.ini: "<<sServerAddress<<endl;
+		}
 	}
-	fclose(fp);
+
+	#if defined(WIN32)
+	  WSADATA wsaData;
+	  int wsaret=WSAStartup(0x101,&wsaData);
+	  if(wsaret!=0)
+	  {
+		  return 0;
+	  }
+	#endif
 
 	if(sServerAddress.size() == 0)
 	{
-		cout<<"\nUnable to find server IPaddress in server.ini";
-		cout<<"\nPlease set server IPaddress";
-		cout<<"\nThis is Boby Signing off. BYE:";
-		cin.ignore(numeric_limits<streamsize>::max(), '\n');
-		return 0;
+		cout<<"Scanning for server..."<<endl;
+		// Start broadcasting to find server:
+		SOCKET broadSock;
+		char opt = 1;
+		// Create Broadcast Socket:
+		broadSock=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+		if(broadSock == -1){
+			cout<<"Unable to create broadcast socket, closing..."<<endl;
+			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+			return 0;
+		}
+ 
+		// Set socket option to Broadcast:
+		setsockopt(broadSock, SOL_SOCKET, SO_BROADCAST, (char*)&opt, sizeof(char));
+		SOCKADDR_IN broadAddr;
+		memset(&broadAddr,0, sizeof(broadAddr));
+		broadAddr.sin_family = AF_INET;
+		broadAddr.sin_port = htons(8085);
+		broadAddr.sin_addr.s_addr = INADDR_BROADCAST;
+		int len = sizeof(broadAddr);
+		string recieveMsg = "Where";
+		string respondMsg = "Here";
+		// Send Broadcast:
+		int iStat = sendto(broadSock, recieveMsg.c_str(), recieveMsg.size(), 0, (sockaddr*)&broadAddr, len);
+		if(iStat == -1){
+			cout<<"Unable to send broadcast, closing..."<<endl;
+			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+			return 0;
+		}
+		// Recieve Msg:
+		#define BUFSIZE 4096
+		char buf[BUFSIZE];
+		SOCKADDR_IN serverAddr;
+		int serverLen = sizeof(serverAddr);
+		iStat = recvfrom(broadSock, buf, BUFSIZE, 0, (struct sockaddr*) &serverAddr, &serverLen);
+		if(iStat == -1){
+			cout<<"Unable to retrieve broadcast response, closing..."<<endl;
+			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+			return 0;
+		}
+		// Retrieve IP:
+		sServerAddress = inet_ntoa(serverAddr.sin_addr);
+		closesocket(broadSock);
+		cout<<"Found server at: "<<sServerAddress<<endl;
 	}
 
 	MyMessObj.Init(sServerAddress.c_str(),8084);
 	if(!MyMessObj.IsConnected())
 	{
-		cout<<"\nUnable to connect to the IPaddress specified in server.ini";
-		cout<<"\nPlease check server IPaddress";
-		cout<<"\nThis is Boby Signing off. BYE:";
+		cout<<"\nUnable to connect to the IP address!";
 		cin.ignore(numeric_limits<streamsize>::max(), '\n');
 		return 0;	
 	}
@@ -168,6 +211,7 @@ int main(int argc, char* argv[])
 			break;
 		}
 	}
+	MyMessObj.closing = true;
 	#ifdef WIN32
 		WSACleanup();
 	#endif

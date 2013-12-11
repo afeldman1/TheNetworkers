@@ -30,23 +30,29 @@ THREAD ServerListenThread(LPVOID pParam)
 
 THREAD LookoutThread(LPVOID pParam)
 {
-	/*SOCKET sRecSocket = reinterpret_cast<SOCKET>(pParam);
-	char tempBuf[4096];
-	int newMember;
-	while(select(sd+1, &readfds, NULL, NULL, &timeout) > 0)
-    {
-        // receive the response
-        recvfrom( ... );
-
-        // process the response (or queue for another thread / later processing)
-
-        // reset receive timeout
-        timeout.tv_sec = 5; 
-    }
-	while(1)
+	SOCKET sRecSocket = reinterpret_cast<SOCKET>(pParam);
+	struct sockaddr_in clientAddr;
+	int iStat, clientLength = sizeof(clientAddr);
+	#define BUFSIZE 4096
+	char tempBuf[BUFSIZE];
+	string recieveMsg = "Where";
+	string respondMsg = "Here";
+	while(true)
 	{
-		newMember = recv(sRecSocket, tempBuf, 4096, 0);
-	}*/
+		// Listen for clients:
+		iStat = recvfrom(sRecSocket, tempBuf, BUFSIZE, 0, (struct sockaddr*) &clientAddr, &clientLength);
+		if(iStat == -1){
+			break;
+		}
+ 
+		//printf("SERVER: read %d bytes from IP %s(%s)\n", message, inet_ntoa(client_address.sin_addr), buf);
+
+		// Respond to client:
+		iStat = sendto(sRecSocket, respondMsg.c_str(), respondMsg.size()+1, 0, (struct sockaddr*) &clientAddr, clientLength);
+		if(iStat == -1){
+			break;
+		}
+	}
 	return 0;
 }
 
@@ -129,6 +135,7 @@ void CChatServer::StartListenClient()
 		Client *newClient = new Client();
 		newClient->sock = m_SClient;
 		ClientList.push_back(*newClient);
+		cout<<inet_ntoa(from.sin_addr)<<" has connected."<<endl;
 
 		#if defined(WIN32)
 			HANDLE tID;
