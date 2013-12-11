@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
  
 		// Set socket option to Broadcast:
 		setsockopt(broadSock, SOL_SOCKET, SO_BROADCAST, (char*)&opt, sizeof(char));
-		SOCKADDR_IN broadAddr;
+		struct sockaddr_in broadAddr;
 		memset(&broadAddr,0, sizeof(broadAddr));
 		broadAddr.sin_family = AF_INET;
 		broadAddr.sin_port = htons(8085);
@@ -168,7 +168,7 @@ int main(int argc, char* argv[])
 		// Recieve Msg:
 		#define BUFSIZE 4096
 		char buf[BUFSIZE];
-		SOCKADDR_IN serverAddr;
+		struct sockaddr_in serverAddr;
 		socklen_t serverLen = sizeof(serverAddr);
 		iStat = recvfrom(broadSock, buf, BUFSIZE, 0, (struct sockaddr*) &serverAddr, &serverLen);
 		if(iStat == -1){

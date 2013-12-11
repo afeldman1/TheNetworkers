@@ -9,7 +9,7 @@
 #include <list>
 #include <iostream>
 #include <limits>       // std::numeric_limits
-#include <cstdint>
+#include <stdint.h>
 #include <string>
 
 #ifdef WIN32
