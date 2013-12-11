@@ -11,7 +11,6 @@
 #include <limits>       // std::numeric_limits
 #include <cstdint>
 #include <string>
-using namespace std;
 
 #ifdef WIN32
   #define NOMINMAX
@@ -38,7 +37,7 @@ using namespace std;
 
 struct Client{
 	SOCKET sock;
-	string name;
+	std::string name;
 
 	Client(){
 		sock = NULL;
@@ -57,16 +56,16 @@ public:
 	~CChatServer();
 	bool IsConnected(){return m_bIsConnected;} // returns connection status
 	void StartListenClient(); // Listen to client
-	int SendMessageTo(Client sClient, string MSG);
-	int SendMessageAll(string MSG, Client aClient=Client());
+	int SendMessageTo(Client sClient, std::string MSG);
+	int SendMessageAll(std::string MSG, Client aClient=Client());
 	int RecClient(Client& sRecClient); // receive message for a particulat socket
-	list<Client>::iterator FindClient(Client sRecClient);
+	std::list<Client>::iterator FindClient(Client sRecClient);
 	int Shutdown();
 private:
 	bool m_bIsConnected,closing; // true - connected false - not connected
 	int m_iServerPort;
-	list<Client> ClientList; // All clients
+	std::list<Client> ClientList; // All clients
 	SOCKET m_SClient;
 	SOCKET unknownListenClient;
-	SOCKET m_SListenClient; // socket listening for client calls
+	SOCKET m_SListenClient; // socket Listening for client calls
 };

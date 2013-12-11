@@ -33,11 +33,11 @@ THREAD LookoutThread(LPVOID pParam)
 	SOCKET sRecSocket = reinterpret_cast<SOCKET>(pParam);
 	struct sockaddr_in clientAddr;
 	int iStat;
-	unsigned int clientLength = sizeof(clientAddr);
+	socklen_t clientLength = sizeof(clientAddr);
 	#define BUFSIZE 4096
 	char tempBuf[BUFSIZE];
-	string recieveMsg = "Where";
-	string respondMsg = "Here";
+	std::string recieveMsg = "Where";
+	std::string respondMsg = "Here";
 	while(true)
 	{
 		// Listen for clients:
@@ -45,8 +45,6 @@ THREAD LookoutThread(LPVOID pParam)
 		if(iStat == -1){
 			break;
 		}
- 
-		//printf("SERVER: read %d bytes from IP %s(%s)\n", message, inet_ntoa(client_address.sin_addr), buf);
 
 		// Respond to client:
 		iStat = sendto(sRecSocket, respondMsg.c_str(), respondMsg.size()+1, 0, (struct sockaddr*) &clientAddr, clientLength);
@@ -61,7 +59,7 @@ THREAD LookoutThread(LPVOID pParam)
 
 CChatServer::CChatServer()
 {
-    cout << "Starting up TCP Chat server\n";
+    std::cout << "Starting up TCP Chat server\n";
 	m_bIsConnected = false;
 
 	#if defined(WIN32)
@@ -92,7 +90,7 @@ CChatServer::CChatServer()
     }
 
 
-    if(bind(m_SListenClient, (sockaddr*)&local, sizeof(local)) == SOCKET_ERROR || bind(unknownListenClient, (sockaddr*)&unknown, sizeof(unknown)) == SOCKET_ERROR)
+	if(bind(m_SListenClient, (sockaddr*)&local, sizeof(local)) == SOCKET_ERROR || bind(unknownListenClient, (sockaddr*)&unknown, sizeof(unknown)) == SOCKET_ERROR)
     {
         return;
     }
@@ -136,7 +134,7 @@ void CChatServer::StartListenClient()
 		Client *newClient = new Client();
 		newClient->sock = m_SClient;
 		ClientList.push_back(*newClient);
-		cout<<inet_ntoa(from.sin_addr)<<" has connected."<<endl;
+		std::cout<<inet_ntoa(from.sin_addr)<<" has connected."<<std::endl;
 
 		#if defined(WIN32)
 			HANDLE tID;
@@ -150,21 +148,21 @@ void CChatServer::StartListenClient()
 	}
 }
 
-int CChatServer::SendMessageTo(Client sClient, string MSG)
+int CChatServer::SendMessageTo(Client sClient, std::string MSG)
 {
 		int iStat = send(sClient.sock, MSG.c_str(), MSG.size()+1, 0);
 		if(iStat == -1){
 			ClientList.remove(sClient);
-			cout<<sClient.name + " has left."<<endl;
+			std::cout<<sClient.name + " has left."<<std::endl;
 			SendMessageAll(sClient.name + " has left.");
 			return 1;
 		}
 		return 0;
 }
-int CChatServer::SendMessageAll(string MSG, Client aClient)
+int CChatServer::SendMessageAll(std::string MSG, Client aClient)
 {
 		int iStat = 0;
-		list<Client>::iterator itl;
+		std::list<Client>::iterator itl;
 		if(ClientList.size() == 0)
 			return 0;
 
@@ -173,7 +171,7 @@ int CChatServer::SendMessageAll(string MSG, Client aClient)
 			if(itl->name != aClient.name && !itl->name.empty()){
 				iStat = send(itl->sock,MSG.c_str(),MSG.size()+1,0);
 				if(iStat == -1){
-					cout<<itl->name + " has left."<<endl;
+					std::cout<<itl->name + " has left."<<std::endl;
 					SendMessageAll(itl->name + " has left.", *itl);
 					ClientList.remove(*itl);
 					return 1;
@@ -183,8 +181,8 @@ int CChatServer::SendMessageAll(string MSG, Client aClient)
 		return 0;
 }
 
-list<Client>::iterator CChatServer::FindClient(Client sRecClient){
-	list<Client>::iterator itl;
+std::list<Client>::iterator CChatServer::FindClient(Client sRecClient){
+	std::list<Client>::iterator itl;
 	if(ClientList.size() == 0)
 		return itl;
 
@@ -201,22 +199,22 @@ int CChatServer::RecClient(Client& sRecClient)
     char temp[4096];
 	int iStat;
 
-    //cout <<inet_ntoa(from.sin_addr) <<":"<<temp<<"\r\n";
+    //std::cout <<inet_ntoa(from.sin_addr) <<":"<<temp<<"\r\n";
 	iStat = recv(sRecClient.sock,temp,4096,0);
 	if(!closing){
 	if(iStat == -1)
 	{
 		if(ClientList.size())
 			ClientList.remove(sRecClient);
-		cout<<sRecClient.name + " has left."<<endl;
+		std::cout<<sRecClient.name + " has left."<<std::endl;
 		SendMessageAll(sRecClient.name + " has left.");
 		return 1;
 	}
 	else
 	{
 		if(sRecClient.name.empty()){
-			string reqName = temp;
-			list<Client>::iterator itl;
+			std::string reqName = temp;
+			std::list<Client>::iterator itl;
 			if(ClientList.size() == 0)
 				return 0; // Massive problems if this happens. Restart server.
 			for(itl = ClientList.begin();itl != ClientList.end();itl++)
@@ -231,11 +229,11 @@ int CChatServer::RecClient(Client& sRecClient)
 			SendMessageTo(sRecClient, "Valid Name!");
 			FindClient(sRecClient)->name = reqName;
 			sRecClient.name = reqName;
-			cout<<reqName + " has entered chat."<<endl;
+			std::cout<<reqName + " has entered chat."<<std::endl;
 			SendMessageAll(reqName + " has entered chat.", sRecClient);
 		}else{
-			string msg = sRecClient.name + ": " + temp;
-			cout<<msg<<endl;
+			std::string msg = sRecClient.name + ": " + temp;
+			std::cout<<msg<<std::endl;
 			SendMessageAll(msg, sRecClient);
 		}
 		return 0;
@@ -247,7 +245,7 @@ int CChatServer::RecClient(Client& sRecClient)
 int CChatServer::Shutdown(){
 	closing = true;
 	int iStat = 0;
-	list<Client>::iterator itl;
+	std::list<Client>::iterator itl;
 	if(ClientList.size() == 0)
 		return 0;
 
@@ -268,17 +266,17 @@ int main(int argc, char* argv[])
     int nRetCode = 0;
 	char buf[4096];
 	
-	cout << "This aplication act as a chat server.\n";
-	cout << "Messages from any pc will be broadcasted to all connected pcs.\n";
-	cout << "Connect to the server pc port 8084.\n";
-    cout << "Press ONLY ENTER to quit.\n";
-	cout << "=================================================\n";
+	std::cout << "This aplication act as a chat server.\n";
+	std::cout << "Messages from any pc will be broadcasted to all connected pcs.\n";
+	std::cout << "Connect to the server pc port 8084.\n";
+    std::cout << "Press ONLY ENTER to quit.\n";
+	std::cout << "=================================================\n";
 
 	if(!CServerObj.IsConnected())
 	{
-		cout<<"\nFailed to initialise server socket";
-		cout<<"\nSigning off : Bye";
-		cin.ignore(numeric_limits<streamsize>::max(), '\n');
+		std::cout<<"\nFailed to initialise server socket";
+		std::cout<<"\nSigning off : Bye";
+		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 		return 1;
 	}
 
@@ -291,21 +289,21 @@ int main(int argc, char* argv[])
 	  pthread_create(&tID, NULL, ServerListenThread, 0);
 	#endif
 
-	string ServerName = "Server";
+	std::string ServerName = "Server";
 	while(gets(buf))
 	{
 		if(strlen(buf) == 0)
 			break;
 		if(CServerObj.SendMessageAll(ServerName + ": " + buf))
 		{
-			cout<<"Problem in connecting to server. Check whether server is running\n";
+			std::cout<<"Problem in connecting to server. Check whether server is running\n";
 			break;
 		}
 	}
 
-	cout<<"Signing off."<<endl;
 	CServerObj.Shutdown();
-	cin.ignore(numeric_limits<streamsize>::max(), '\n');
+	std::cout<<"Signed off, closing..."<<std::endl;
+	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
 	#ifndef WIN32
 	  // dispose all threads
@@ -313,4 +311,3 @@ int main(int argc, char* argv[])
 	#endif
     return nRetCode;
 }
-

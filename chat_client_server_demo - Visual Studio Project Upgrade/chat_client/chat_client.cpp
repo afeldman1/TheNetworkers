@@ -14,7 +14,7 @@ CIPMessage::CIPMessage()
 	m_bIsConnected = false;
 }
 
-void CIPMessage::Init(string sIpAddress, int iPort)
+void CIPMessage::Init(std::string sIpAddress, int iPort)
 {
 
 	m_sServerIPAddress = sIpAddress;
@@ -55,7 +55,7 @@ CIPMessage::~CIPMessage()
 		closesocket(conn);
 }
 
-int CIPMessage::SendMessagePort(string sMessage)
+int CIPMessage::SendMessagePort(std::string sMessage)
 {
 		int iStat = 0;
 
@@ -75,11 +75,11 @@ int CIPMessage::RecMessagePort()
 	iStat = recv(conn,acRetData,4096,0);
 	if(iStat == -1){
 		if(!closing){
-			cout<<"Server has ended!"<<endl;
+			std::cout<<"Server has ended!"<<std::endl;
 		}
 		return 1;
 	}
-	cout<<acRetData<<"\n";
+	std::cout<<acRetData<<"\n";
 
 	return 0;
 }
@@ -101,14 +101,14 @@ int main(int argc, char* argv[])
 {
 	int nRetCode = 0;
 	char buf[4096];
-	cout<<"This is a client TCP/IP application\nConnecting to port 8084\n";
-	cout<<"\nPress ONLY ENTER to quit";
-	cout<<"\n===============================================\n"<<endl;
+	std::cout<<"This is a client TCP/IP application\nConnecting to port 8084\n";
+	std::cout<<"\nPress ONLY ENTER to quit";
+	std::cout<<"\n===============================================\n"<<std::endl;
 
-	string sServerAddress;
+	std::string sServerAddress;
 	FILE *fp = fopen("server.ini","r");
 	if(fp == NULL){
-		cout<<"Unable to open server.ini!";
+		std::cout<<"Unable to open server.ini!";
 	}else{
 		while((fgets(buf,4096,fp)) != NULL)
 		{
@@ -119,9 +119,9 @@ int main(int argc, char* argv[])
 		}
 		fclose(fp);
 		if(sServerAddress.size() == 0){
-			cout<<"Unable to find server IP address in server.ini"<<endl;
+			std::cout<<"Unable to find server IP address in server.ini"<<std::endl;
 		}else{
-			cout<<"Using server IP address from server.ini: "<<sServerAddress<<endl;
+			std::cout<<"Using server IP address from server.ini: "<<sServerAddress<<std::endl;
 		}
 	}
 
@@ -136,15 +136,15 @@ int main(int argc, char* argv[])
 
 	if(sServerAddress.size() == 0)
 	{
-		cout<<"Scanning for server..."<<endl;
+		std::cout<<"Scanning for server..."<<std::endl;
 		// Start broadcasting to find server:
 		SOCKET broadSock;
 		char opt = 1;
 		// Create Broadcast Socket:
 		broadSock=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 		if(broadSock == -1){
-			cout<<"Unable to create broadcast socket, closing..."<<endl;
-			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+			std::cout<<"Unable to create broadcast socket, closing..."<<std::endl;
+			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 			return 0;
 		}
  
@@ -155,38 +155,38 @@ int main(int argc, char* argv[])
 		broadAddr.sin_family = AF_INET;
 		broadAddr.sin_port = htons(8085);
 		broadAddr.sin_addr.s_addr = INADDR_BROADCAST;
-		unsigned int len = sizeof(broadAddr);
-		string recieveMsg = "Where";
-		string respondMsg = "Here";
+		socklen_t len = sizeof(broadAddr);
+		std::string recieveMsg = "Where";
+		std::string respondMsg = "Here";
 		// Send Broadcast:
-		int iStat = sendto(broadSock, recieveMsg.c_str(), recieveMsg.size(), 0, (sockaddr*)&broadAddr, len);
+		int iStat = sendto(broadSock, recieveMsg.c_str(), recieveMsg.size()+1, 0, (sockaddr*)&broadAddr, len);
 		if(iStat == -1){
-			cout<<"Unable to send broadcast, closing..."<<endl;
-			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+			std::cout<<"Unable to send broadcast, closing..."<<std::endl;
+			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 			return 0;
 		}
 		// Recieve Msg:
 		#define BUFSIZE 4096
 		char buf[BUFSIZE];
 		SOCKADDR_IN serverAddr;
-		unsigned int serverLen = sizeof(serverAddr);
+		socklen_t serverLen = sizeof(serverAddr);
 		iStat = recvfrom(broadSock, buf, BUFSIZE, 0, (struct sockaddr*) &serverAddr, &serverLen);
 		if(iStat == -1){
-			cout<<"Unable to retrieve broadcast response, closing..."<<endl;
-			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+			std::cout<<"Unable to retrieve broadcast response, closing..."<<std::endl;
+			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 			return 0;
 		}
 		// Retrieve IP:
 		sServerAddress = inet_ntoa(serverAddr.sin_addr);
 		closesocket(broadSock);
-		cout<<"Found server at: "<<sServerAddress<<endl;
+		std::cout<<"Found server at: "<<sServerAddress<<std::endl;
 	}
 
 	MyMessObj.Init(sServerAddress.c_str(),8084);
 	if(!MyMessObj.IsConnected())
 	{
-		cout<<"\nUnable to connect to the IP address!";
-		cin.ignore(numeric_limits<streamsize>::max(), '\n');
+		std::cout<<"\nUnable to connect to the IP address!";
+		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 		return 0;	
 	}
 
@@ -200,14 +200,14 @@ int main(int argc, char* argv[])
 	  pthread_create(&tID, NULL, MessageRecThread, 0);
 	#endif
 
-	cout<<"Enter name before entering the chat:"<<endl;
+	std::cout<<"Enter name before entering the chat:"<<std::endl;
 	while(gets(buf))
 	{
 		if(strlen(buf) == 0)
 			break;
 		if(MyMessObj.SendMessagePort(buf))
 		{
-			cout<<"Problem in connecting to server. Check whether server is running!\n";
+			std::cout<<"Problem in connecting to server. Check whether server is running!\n";
 			break;
 		}
 	}
@@ -215,7 +215,8 @@ int main(int argc, char* argv[])
 	#ifdef WIN32
 		WSACleanup();
 	#endif
-	cin.ignore(numeric_limits<streamsize>::max(), '\n');
+	std::cout<<"Signed off, closing..."<<std::endl;
+	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
 	#ifndef WIN32
 	  // dispose all threads
@@ -223,4 +224,3 @@ int main(int argc, char* argv[])
 	#endif
 	return nRetCode;
 }
-

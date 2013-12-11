@@ -11,7 +11,6 @@
 #include <limits>       // std::numeric_limits
 #include <cstdint>
 #include <string>
-using namespace std;
 
 #ifdef WIN32
   #define NOMINMAX
@@ -42,14 +41,14 @@ class CIPMessage
 public:
 	CIPMessage();
 	~CIPMessage();
-	void Init(string sIpAddress, int iPort);
-	int SendMessagePort(string sMessage);
+	void Init(std::string sIpAddress, int iPort);
+	int SendMessagePort(std::string sMessage);
 	int RecMessagePort();
 	bool IsConnected(){return m_bIsConnected;}
 	bool closing;
 private:
 	bool m_bIsConnected; // true - connected false - not connected
-	string m_sServerIPAddress;
+	std::string m_sServerIPAddress;
 	int m_iServerPort;
 	SOCKET conn; // socket connected to server
 };
