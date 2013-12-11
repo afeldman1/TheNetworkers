@@ -155,7 +155,7 @@ int main(int argc, char* argv[])
 		broadAddr.sin_family = AF_INET;
 		broadAddr.sin_port = htons(8085);
 		broadAddr.sin_addr.s_addr = INADDR_BROADCAST;
-		int len = sizeof(broadAddr);
+		unsigned int len = sizeof(broadAddr);
 		string recieveMsg = "Where";
 		string respondMsg = "Here";
 		// Send Broadcast:
@@ -169,7 +169,7 @@ int main(int argc, char* argv[])
 		#define BUFSIZE 4096
 		char buf[BUFSIZE];
 		SOCKADDR_IN serverAddr;
-		int serverLen = sizeof(serverAddr);
+		unsigned int serverLen = sizeof(serverAddr);
 		iStat = recvfrom(broadSock, buf, BUFSIZE, 0, (struct sockaddr*) &serverAddr, &serverLen);
 		if(iStat == -1){
 			cout<<"Unable to retrieve broadcast response, closing..."<<endl;

@@ -32,6 +32,8 @@ using namespace std;
   typedef unsigned int UINT;
   #define closesocket(sock) close(sock)
   #define THREAD void*
+  #define SOCKET_ERROR -1
+  #define SD_BOTH 0x02
 #endif
 
 struct Client{

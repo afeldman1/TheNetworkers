@@ -32,7 +32,8 @@ THREAD LookoutThread(LPVOID pParam)
 {
 	SOCKET sRecSocket = reinterpret_cast<SOCKET>(pParam);
 	struct sockaddr_in clientAddr;
-	int iStat, clientLength = sizeof(clientAddr);
+	int iStat;
+	unsigned int clientLength = sizeof(clientAddr);
 	#define BUFSIZE 4096
 	char tempBuf[BUFSIZE];
 	string recieveMsg = "Where";

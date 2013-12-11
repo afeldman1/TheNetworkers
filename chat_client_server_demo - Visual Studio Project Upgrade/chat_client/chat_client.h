@@ -8,9 +8,9 @@
 #include <stdint.h>
 #include <list>
 #include <iostream>
-#include <string>
 #include <limits>       // std::numeric_limits
 #include <cstdint>
+#include <string>
 using namespace std;
 
 #ifdef WIN32
@@ -32,6 +32,8 @@ using namespace std;
   typedef unsigned int UINT;
   #define closesocket(sock) close(sock)
   #define THREAD void*
+  #define SOCKET_ERROR -1
+  #define SD_BOTH 0x02
 #endif
 
 
