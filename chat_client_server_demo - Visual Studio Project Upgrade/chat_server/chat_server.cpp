@@ -12,18 +12,19 @@ THREAD ServerRecThread(LPVOID pParam)
 	//SOCKET sRecSocket = reinterpret_cast<SOCKET>(pParam);
 	Client sRecClient = *((Client*)(pParam));
 	delete (Client*)(pParam);
-	while(1)
+	while(true)
 	{
 		//if(CServerObj.RecClient(sRecSocket))
-		if(CServerObj.RecClient(sRecClient))
-			break;
+		if(CServerObj.RecClient(sRecClient)){
+			return 0;
+		}
 	}
 	return 0;
 }
 
 THREAD ServerListenThread(LPVOID pParam)
 {	
-	while(1)
+	while(true)
 		CServerObj.StartListenClient();
 	return 0;
 }
@@ -42,14 +43,14 @@ THREAD LookoutThread(LPVOID pParam)
 	{
 		// Listen for clients:
 		iStat = recvfrom(sRecSocket, tempBuf, BUFSIZE, 0, (struct sockaddr*) &clientAddr, &clientLength);
-		if(iStat == -1){
-			break;
+		if(iStat <= 0){
+			return 0;
 		}
 
 		// Respond to client:
 		iStat = sendto(sRecSocket, respondMsg.c_str(), respondMsg.size()+1, 0, (struct sockaddr*) &clientAddr, clientLength);
-		if(iStat == -1){
-			break;
+		if(iStat <= 0){
+			return 0;
 		}
 	}
 	return 0;
@@ -170,7 +171,7 @@ int CChatServer::SendMessageAll(std::string MSG, Client aClient)
 		{
 			if(itl->name != aClient.name && !itl->name.empty()){
 				iStat = send(itl->sock,MSG.c_str(),MSG.size()+1,0);
-				if(iStat == -1){
+				if(iStat <= 0){
 					std::cout<<itl->name + " has left."<<std::endl;
 					SendMessageAll(itl->name + " has left.", *itl);
 					ClientList.remove(*itl);
@@ -194,7 +195,7 @@ std::list<Client>::iterator CChatServer::FindClient(Client sRecClient){
 	}
 }
 
-int CChatServer::RecClient(Client& sRecClient)
+bool CChatServer::RecClient(Client& sRecClient)
 {
     char temp[4096];
 	int iStat;
@@ -202,13 +203,13 @@ int CChatServer::RecClient(Client& sRecClient)
     //std::cout <<inet_ntoa(from.sin_addr) <<":"<<temp<<"\r\n";
 	iStat = recv(sRecClient.sock,temp,4096,0);
 	if(!closing){
-	if(iStat == -1)
+	if(iStat <= 0)
 	{
 		if(ClientList.size())
 			ClientList.remove(sRecClient);
 		std::cout<<sRecClient.name + " has left."<<std::endl;
 		SendMessageAll(sRecClient.name + " has left.");
-		return 1;
+		return true;
 	}
 	else
 	{
@@ -216,13 +217,13 @@ int CChatServer::RecClient(Client& sRecClient)
 			std::string reqName = temp;
 			std::list<Client>::iterator itl;
 			if(ClientList.size() == 0)
-				return 0; // Massive problems if this happens. Restart server.
+				return false; // Massive problems if this happens. Restart server.
 			for(itl = ClientList.begin();itl != ClientList.end();itl++)
 			{
 				if(itl->name == reqName){
 					// Send Not Valid Name
 					SendMessageTo(sRecClient, "Invalid Name!");
-					return 0;
+					return false;
 				}
 			}
 			// Send Was Valid Name
@@ -236,10 +237,10 @@ int CChatServer::RecClient(Client& sRecClient)
 			std::cout<<msg<<std::endl;
 			SendMessageAll(msg, sRecClient);
 		}
-		return 0;
+		return false;
 	}
 	}
-	return 0;
+	return false;
 }
 
 int CChatServer::Shutdown(){

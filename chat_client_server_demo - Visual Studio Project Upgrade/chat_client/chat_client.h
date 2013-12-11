@@ -9,15 +9,22 @@
 #include <list>
 #include <iostream>
 #include <limits>       // std::numeric_limits
+<<<<<<< HEAD
 #include <stdint.h>
+=======
+>>>>>>> Minor Fixes for infinite loops
 #include <string>
 
 #ifdef WIN32
+  #include <cstdint>
   #define NOMINMAX
   #include <winsock2.h>			// For socket(), connect(), send(), and recv()
   typedef int32_t socklen_t;	// Or use int (This function, unlike in SOCKET programming [uint], is int)
   #define THREAD DWORD WINAPI	// Requirements for running a function in a separate thread in WIN32.
 #else
+  #include <stdint.h>
+  #include <cstring>
+  using std::strlen;
   #include <pthread.h>
   #include <sys/types.h>       // For data types
   #include <sys/socket.h>      // For socket(), connect(), send(), and recv()
@@ -43,7 +50,7 @@ public:
 	~CIPMessage();
 	void Init(std::string sIpAddress, int iPort);
 	int SendMessagePort(std::string sMessage);
-	int RecMessagePort();
+	bool RecMessagePort();
 	bool IsConnected(){return m_bIsConnected;}
 	bool closing;
 private:

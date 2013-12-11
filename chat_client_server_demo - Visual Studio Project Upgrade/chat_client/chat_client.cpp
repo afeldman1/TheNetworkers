@@ -60,37 +60,39 @@ int CIPMessage::SendMessagePort(std::string sMessage)
 		int iStat = 0;
 
 		iStat = send(conn,sMessage.c_str(),sMessage.size()+1,0);
-		if(iStat == -1)
+		if(iStat <= 0){
 			return 1;
+		}
 
 		return 0;
 
 }
 
-int CIPMessage::RecMessagePort()
+bool CIPMessage::RecMessagePort()
 {
 	char acRetData[4096];
 	int iStat = 0;
 
 	iStat = recv(conn,acRetData,4096,0);
-	if(iStat == -1){
+	if(iStat <= 0){
 		if(!closing){
 			std::cout<<"Server has ended!"<<std::endl;
 		}
-		return 1;
+		return true;
 	}
 	std::cout<<acRetData<<"\n";
 
-	return 0;
+	return false;
 }
 
 
 THREAD MessageRecThread(LPVOID pParam)
 {	
-	while(1)
+	while(true)
 	{
-		if(MyMessObj.RecMessagePort())
-			break;
+		if(MyMessObj.RecMessagePort()){
+			return 0;
+		}
 	}
 	return 0;
 }
@@ -108,7 +110,7 @@ int main(int argc, char* argv[])
 	std::string sServerAddress;
 	FILE *fp = fopen("server.ini","r");
 	if(fp == NULL){
-		std::cout<<"Unable to open server.ini!";
+		std::cout<<"Unable to open server.ini!"<<std::endl;
 	}else{
 		while((fgets(buf,4096,fp)) != NULL)
 		{
@@ -159,8 +161,8 @@ int main(int argc, char* argv[])
 		std::string recieveMsg = "Where";
 		std::string respondMsg = "Here";
 		// Send Broadcast:
-		int iStat = sendto(broadSock, recieveMsg.c_str(), recieveMsg.size()+1, 0, (sockaddr*)&broadAddr, len);
-		if(iStat == -1){
+		int iStat = sendto(broadSock, recieveMsg.c_str(), recieveMsg.size()+1, 0, (struct sockaddr*)&broadAddr, len);
+		if(iStat <= 0){
 			std::cout<<"Unable to send broadcast, closing..."<<std::endl;
 			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 			return 0;
@@ -171,7 +173,7 @@ int main(int argc, char* argv[])
 		struct sockaddr_in serverAddr;
 		socklen_t serverLen = sizeof(serverAddr);
 		iStat = recvfrom(broadSock, buf, BUFSIZE, 0, (struct sockaddr*) &serverAddr, &serverLen);
-		if(iStat == -1){
+		if(iStat <= 0){
 			std::cout<<"Unable to retrieve broadcast response, closing..."<<std::endl;
 			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 			return 0;

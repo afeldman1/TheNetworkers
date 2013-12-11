@@ -9,15 +9,22 @@
 #include <list>
 #include <iostream>
 #include <limits>       // std::numeric_limits
+<<<<<<< HEAD
 #include <stdint.h>
+=======
+>>>>>>> Minor Fixes for infinite loops
 #include <string>
 
 #ifdef WIN32
+  #include <cstdint>
   #define NOMINMAX
   #include <winsock2.h>			// For socket(), connect(), send(), and recv()
   typedef int32_t socklen_t;	// Or use int (This function, unlike in SOCKET programming [uint], is int)
   #define THREAD DWORD WINAPI	// Requirements for running a function in a separate thread in WIN32.
 #else
+  #include <stdint.h>
+  #include <cstring>
+  using std::strlen;
   #include <pthread.h>
   #include <sys/types.h>       // For data types
   #include <sys/socket.h>      // For socket(), connect(), send(), and recv()
@@ -58,7 +65,7 @@ public:
 	void StartListenClient(); // Listen to client
 	int SendMessageTo(Client sClient, std::string MSG);
 	int SendMessageAll(std::string MSG, Client aClient=Client());
-	int RecClient(Client& sRecClient); // receive message for a particulat socket
+	bool RecClient(Client& sRecClient); // receive message for a particulat socket
 	std::list<Client>::iterator FindClient(Client sRecClient);
 	int Shutdown();
 private:
