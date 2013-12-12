@@ -1,7 +1,7 @@
 //************************************************************************
-// Boby Thomas Pazheparampil
-// May 2006
-// Implementation of CIPMessage class and main.
+// The Networkers
+// Fall Semester 2013
+// Based on: http://www.codeproject.com/Articles/14032/Chat-Client-Server
 //************************************************************************
 
 #include <stdio.h>
@@ -9,10 +9,6 @@
 #include <list>
 #include <iostream>
 #include <limits>       // std::numeric_limits
-<<<<<<< HEAD
-#include <stdint.h>
-=======
->>>>>>> Minor Fixes for infinite loops
 #include <string>
 
 #ifdef WIN32
@@ -42,37 +38,20 @@
   #define SD_BOTH 0x02
 #endif
 
-struct Client{
-	SOCKET sock;
-	std::string name;
 
-	Client(){
-		sock = NULL;
-		name = "";
-	}
-
-	bool operator==(const Client& a){
-		return (this->name==a.name && this->sock==a.sock);
-	}
-};
-
-class CChatServer
+class CIPMessage
 {
 public:
-	CChatServer();
-	~CChatServer();
-	bool IsConnected(){return m_bIsConnected;} // returns connection status
-	void StartListenClient(); // Listen to client
-	int SendMessageTo(Client sClient, std::string MSG);
-	int SendMessageAll(std::string MSG, Client aClient=Client());
-	bool RecClient(Client& sRecClient); // receive message for a particulat socket
-	std::list<Client>::iterator FindClient(Client sRecClient);
-	int Shutdown();
+	CIPMessage();
+	~CIPMessage();
+	void Init(std::string sIpAddress, int iPort);
+	int SendMessagePort(std::string sMessage);
+	bool RecMessagePort();
+	bool IsConnected(){return m_bIsConnected;}
+	bool closing;
 private:
-	bool m_bIsConnected,closing; // true - connected false - not connected
+	bool m_bIsConnected; // true - connected false - not connected
+	std::string m_sServerIPAddress;
 	int m_iServerPort;
-	std::list<Client> ClientList; // All clients
-	SOCKET m_SClient;
-	SOCKET unknownListenClient;
-	SOCKET m_SListenClient; // socket Listening for client calls
+	SOCKET conn; // socket connected to server
 };

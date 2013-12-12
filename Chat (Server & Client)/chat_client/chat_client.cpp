@@ -1,7 +1,7 @@
 //************************************************************************
-// Boby Thomas Pazheparampil
-// May 2006
-// Implementation of CIPMessage class and main.
+// The Networkers
+// Fall Semester 2013
+// Based on: http://www.codeproject.com/Articles/14032/Chat-Client-Server
 //************************************************************************
 #include "chat_client.h"
 

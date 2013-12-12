@@ -1,20 +1,18 @@
 //************************************************************************
-// Implementation of CIPMessage class and main.
+// The Networkers
+// Fall Semester 2013
+// Based on: http://www.codeproject.com/Articles/14032/Chat-Client-Server
 //************************************************************************
-
 #include "chat_server.h"
-
 
 CChatServer CServerObj;
 
 THREAD ServerRecThread(LPVOID pParam)
 {	
-	//SOCKET sRecSocket = reinterpret_cast<SOCKET>(pParam);
 	Client sRecClient = *((Client*)(pParam));
 	delete (Client*)(pParam);
 	while(true)
 	{
-		//if(CServerObj.RecClient(sRecSocket))
 		if(CServerObj.RecClient(sRecClient)){
 			return 0;
 		}
@@ -200,7 +198,6 @@ bool CChatServer::RecClient(Client& sRecClient)
     char temp[4096];
 	int iStat;
 
-    //std::cout <<inet_ntoa(from.sin_addr) <<":"<<temp<<"\r\n";
 	iStat = recv(sRecClient.sock,temp,4096,0);
 	if(!closing){
 	if(iStat <= 0)
@@ -267,7 +264,7 @@ int main(int argc, char* argv[])
     int nRetCode = 0;
 	char buf[4096];
 	
-	std::cout << "This aplication act as a chat server.\n";
+	std::cout << "This application act as a chat server.\n";
 	std::cout << "Messages from any pc will be broadcasted to all connected pcs.\n";
 	std::cout << "Connect to the server pc port 8084.\n";
     std::cout << "Press ONLY ENTER to quit.\n";
